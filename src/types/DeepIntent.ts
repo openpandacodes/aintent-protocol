@@ -7,5 +7,5 @@ export interface DeepIntent {
     raw: string;
     mainGoal: Goal;
     subGoals: Goal[];
-  }
+}
   
