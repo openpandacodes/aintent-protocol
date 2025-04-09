@@ -5,5 +5,5 @@ export interface Goal {
     objective: string;
     dependencies: string[];
     constraints?: string[];
-  }
+}
   

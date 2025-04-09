@@ -3,7 +3,7 @@
 import { ChatClientBase } from '../ChatClientBase';
 import { ChatMessage, ChatResponse, ChatClientConfig } from '../../types/ChatClient';
 import { DeepIntent } from '../../types/DeepIntent';
-import { Intent } from '../../types/intent';
+import { Intent, IntentExecutionResult } from '../../types/intent';
 import '../../types/env';
 
 declare global {
@@ -17,7 +17,37 @@ declare global {
   }
 }
 
+/**
+ * Response structure from the Claude API
+ * @interface ClaudeAPIResponse
+ */
+interface ClaudeAPIResponse {
+  /**
+   * The content wrapper containing the response text
+   */
+  content: {
+    /**
+     * The actual text response from Claude
+     */
+    text: string;
+  };
+  /**
+   * Optional metadata from the API response
+   */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Client implementation for interacting with Anthropic's Claude AI model
+ * Extends the base chat client with Claude-specific functionality
+ * @class ClaudeClient
+ * @extends ChatClientBase
+ */
 export class ClaudeClient extends ChatClientBase {
+  /**
+   * System prompt that guides Claude's behavior for intent extraction
+   * @private
+   */
   private systemPrompt = `You are an intent extraction assistant. Your task is to analyze user messages and extract their intent in a structured format.
   
   The intent should be clear, concise, and actionable. Consider the following:
@@ -35,6 +65,10 @@ export class ClaudeClient extends ChatClientBase {
     "constraints": ["list of constraints"]
   }`;
 
+  /**
+   * Creates a new instance of the Claude client
+   * @param config - Optional configuration overrides
+   */
   constructor(config?: Partial<ChatClientConfig>) {
     const defaultConfig: ChatClientConfig = {
       apiKey: window.env?.REACT_APP_CLAUDE_API_KEY || '',
@@ -46,22 +80,38 @@ export class ClaudeClient extends ChatClientBase {
     super('claude', '1.0', { ...defaultConfig, ...config });
   }
 
+  /**
+   * Initializes the Claude client
+   * Validates the configuration and performs any necessary setup
+   * @throws {Error} If the API key is missing or invalid
+   */
   async initialize(): Promise<void> {
     this.validateConfig();
     // Additional Claude-specific initialization if needed
   }
 
+  /**
+   * Sends a message to Claude and receives a response
+   * @param message - The message to send
+   * @returns The response from Claude
+   * @throws {Error} If the API call fails
+   */
   async sendMessage(message: ChatMessage): Promise<ChatResponse> {
-    // Implement Claude API call here
     const response = await this.callClaudeAPI(message);
     return this.parseClaudeResponse(response);
   }
 
+  /**
+   * Extracts structured intent information from Claude's response
+   * @param response - The raw response from Claude
+   * @returns A structured DeepIntent object
+   * @throws {Error} If the response cannot be parsed
+   * @protected
+   */
   protected async extractIntent(response: ChatResponse): Promise<DeepIntent> {
     try {
       const intentData = JSON.parse(response.content);
       
-      // Store the full response and metadata in the raw field
       const rawData = {
         originalResponse: response.rawResponse,
         confidence: intentData.confidence,
@@ -90,6 +140,12 @@ export class ClaudeClient extends ChatClientBase {
     }
   }
 
+  /**
+   * Processes user input to extract intent
+   * @param userInput - The raw user input to process
+   * @returns A structured Intent object
+   * @throws {Error} If intent extraction fails
+   */
   async processIntent(userInput: string): Promise<Intent> {
     const message: ChatMessage = {
       role: 'user',
@@ -107,7 +163,13 @@ export class ClaudeClient extends ChatClientBase {
     };
   }
 
-  async executeIntent(intent: Intent): Promise<any> {
+  /**
+   * Executes a processed intent
+   * @param intent - The intent to execute
+   * @returns The result of the execution
+   * @throws {Error} If execution fails
+   */
+  async executeIntent(intent: Intent): Promise<IntentExecutionResult> {
     const message: ChatMessage = {
       role: 'user',
       content: `Execute the following intent:
@@ -119,11 +181,19 @@ Parameters: ${JSON.stringify(intent.parameters, null, 2)}`
     const response = await this.sendMessage(message);
     return {
       status: 'completed',
-      result: response.content
+      result: response.content,
+      metadata: response.metadata
     };
   }
 
-  private async callClaudeAPI(message: ChatMessage): Promise<any> {
+  /**
+   * Makes the actual API call to Claude
+   * @param message - The message to send
+   * @returns The raw API response
+   * @throws {Error} If the API call fails
+   * @private
+   */
+  private async callClaudeAPI(message: ChatMessage): Promise<ClaudeAPIResponse> {
     // Implement actual Claude API call
     // This is a placeholder implementation
     return {
@@ -139,7 +209,13 @@ Parameters: ${JSON.stringify(intent.parameters, null, 2)}`
     };
   }
 
-  private parseClaudeResponse(response: any): ChatResponse {
+  /**
+   * Parses the raw Claude API response into our standard format
+   * @param response - The raw API response
+   * @returns A standardized ChatResponse object
+   * @private
+   */
+  private parseClaudeResponse(response: ClaudeAPIResponse): ChatResponse {
     return {
       content: response.content.text,
       rawResponse: response,
@@ -149,4 +225,4 @@ Parameters: ${JSON.stringify(intent.parameters, null, 2)}`
       }
     };
   }
-} 
+}
