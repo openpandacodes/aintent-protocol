@@ -1,57 +1,16 @@
 // README.md
 
-# �� Aintent Protocol
+# 🤖 Aintent Protocol
 
-> A TypeScript-based protocol for mapping chat queries to Deep Intent and creating executable workflows. This project provides a framework for understanding user intents, generating appropriate workflows, and executing them with proper resource management and verification.
+> A TypeScript-based protocol for intelligent intent parsing and workflow orchestration. This project provides a robust framework for understanding user intents through various chat clients (like Claude, ChatGPT), generating appropriate workflows, and executing them with proper resource management and verification.
 
----
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/openpandacodes/aintent-protocol/actions/workflows/test.yml/badge.svg)](https://github.com/openpandacodes/aintent-protocol/actions/workflows/test.yml)
 
-## 🏗️ Project Structure
+## 🌟 Features
 
-/src # Protocol logic (parser, orchestrator, executor) ├── core # Core engines ├── types # Intent + flow types ├── widgets # CLI / UI widget modules
-
-/chat-engine # State machine & test mocks /tests # Workflow simulation tests
-
-
----
-
-## 🚀 Getting Started
-
-```bash
-pnpm install
-pnpm test
-
-✅ Run Tests
-
-pnpm test
-pnpm test:watch
-pnpm test:coverage
-
-📦 Features
-DeepIntent parsing & execution
-
-Modular test workflows: DeFi, Travel, Shopping, Scheduling
-
-ZK-style proof mocks per workflow step
-
-GitHub Actions CI integration
-
-📡 Coming Soon
-CLI (aintent parse, aintent run)
-
-.diml + DAG file generation
-
-Graph-based UI via FlowViewerWidget
-
-👤 Author
-openpandacodes
-GitHub: @openpandacodes
-
-🛡️ License
-MIT
-
-## Features
-
+- **Multi-LLM Support**: Integrate with multiple chat clients (Claude, ChatGPT, etc.)
 - **Intent Understanding**: Parse natural language queries into structured intents
 - **Workflow Generation**: Convert intents into executable workflows
 - **Resource Management**: Track and validate required resources
@@ -59,30 +18,42 @@ MIT
 - **Proof Chain**: Generate and verify execution proofs
 - **Mock APIs**: Includes mock implementations for common services
 
-## Architecture
+## 🏗️ Architecture
 
 The project is structured into several key components:
 
 ### Core Components
 
-- **DeepIntent**: Represents user intents with main and sub-goals
-- **DeepFlow**: Defines executable workflows with steps and resources
-- **ExecutionResult**: Tracks workflow execution results and proofs
-- **Step**: Represents individual actions in a workflow
-- **ZKProof**: Provides zero-knowledge proof verification
+```
+src/
+├── core/               # Core engine components
+│   ├── ChatClientBase.ts     # Base chat client interface
+│   ├── clients/             # LLM client implementations
+│   ├── Executor.ts         # Workflow execution engine
+│   ├── IntentParser.ts     # Intent parsing logic
+│   ├── OrchestratorEngine.ts # Workflow orchestration
+│   └── ResourceManager.ts   # Resource management
+├── types/              # Type definitions
+└── widgets/            # UI components
+```
 
-### Engine Components
+### Chat Engine
 
-- **OrchestratorEngine**: Generates and manages workflows
-- **Executor**: Executes workflow steps and manages state
-- **ChatSession**: Handles user interaction and context management
-- **ChatContext**: Maintains conversation state and resources
+```
+chat-engine/
+├── ChatContext.ts     # Chat state management
+├── ChatSession.ts     # Chat session handling
+├── ChatStates.ts      # Chat state definitions
+└── mock-apis/         # Mock API implementations
+```
 
-## Installation
+## 🚀 Getting Started
+
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/aintent-protocol.git
+git clone https://github.com/openpandacodes/aintent-protocol.git
 cd aintent-protocol
 
 # Install dependencies
@@ -95,125 +66,146 @@ pnpm run build
 pnpm test
 ```
 
-## Usage
-
-### Basic Workflow
+### Basic Usage
 
 ```typescript
-import { ChatSession } from './chat-engine/ChatSession';
+import { ClaudeClient } from './src/core/clients/ClaudeClient';
 
-// Create a chat session
-const session = new ChatSession((message) => {
-  console.log(message);
+// Initialize chat client
+const client = new ClaudeClient({
+  apiKey: 'your-api-key',
+  model: 'claude-3-opus',
+  temperature: 0.7
 });
 
-// Handle user input
-await session.handleInput('Book a flight to Lisbon and a hotel for 3 nights');
+// Process user message
+const intent = await client.processMessage(
+  'Book a flight to Lisbon and a hotel for 3 nights'
+);
+
+// The intent will be structured as:
+{
+  id: 'intent-123',
+  raw: '...',
+  mainGoal: {
+    id: 'goal-1',
+    objective: 'Book a trip to Lisbon',
+    dependencies: []
+  },
+  subGoals: [
+    {
+      id: 'goal-2',
+      objective: 'Book flight to Lisbon',
+      dependencies: []
+    },
+    {
+      id: 'goal-3',
+      objective: 'Book hotel for 3 nights',
+      dependencies: ['goal-2']
+    }
+  ]
+}
 ```
 
-### Mock APIs
+## 🔧 Configuration
 
-The project includes mock implementations for common services:
+### Chat Client Configuration
 
 ```typescript
-import { searchFlights } from './chat-engine/mock-apis/flightAPI';
-import { searchHotels } from './chat-engine/mock-apis/hotelAPI';
-import { applyVisa } from './chat-engine/mock-apis/visaAPI';
-
-// Example usage
-const flightResult = await searchFlights({
-  from: 'DEL',
-  to: 'LIS',
-  date: '2025-06-10'
-});
+interface ChatClientConfig {
+  apiKey: string;
+  baseUrl?: string;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+}
 ```
 
-## Development
+### Environment Variables
 
-### Project Structure
+Create a `.env` file in the root directory:
 
-```
-aintent-protocol/
-├── src/
-│   ├── types/           # Type definitions
-│   ├── core/            # Core engine components
-│   └── utils/           # Utility functions
-├── chat-engine/
-│   ├── mock-apis/       # Mock API implementations
-│   ├── ChatContext.ts   # Chat context management
-│   └── ChatSession.ts   # Chat session handling
-├── tests/               # Test suites
-└── package.json         # Project configuration
+```env
+CLAUDE_API_KEY=your-claude-api-key
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-### Testing
+## 🧪 Testing
 
-Run the test suite:
+The project includes comprehensive tests:
 
 ```bash
+# Run all tests
 pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Generate coverage report
+pnpm test:coverage
 ```
 
-## Contributing
+## 📚 Documentation
+
+### Intent Structure
+
+The `DeepIntent` interface represents parsed user intents:
+
+```typescript
+interface DeepIntent {
+  id: string;
+  raw: string;
+  mainGoal: Goal;
+  subGoals: Goal[];
+}
+```
+
+### Workflow Structure
+
+The `DeepFlow` interface represents executable workflows:
+
+```typescript
+interface DeepFlow {
+  id: string;
+  name: string;
+  description: string;
+  goals: Goal[];
+  steps: Step[];
+  requiredResources: string[];
+  estimatedDuration: number;
+  proofChain?: string[];
+}
+```
+
+## 🛣️ Roadmap
+
+- [ ] Add support for more LLM providers
+- [ ] Implement parallel workflow execution
+- [ ] Add workflow visualization tools
+- [ ] Create plugin system for custom actions
+- [ ] Add support for workflow templates
+- [ ] Implement resource caching
+- [ ] Add performance monitoring
+- [ ] Create web interface
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## License
+## 📝 License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Suggested Improvements
+## 👤 Author
 
-1. **Enhanced Error Handling**
-   - Add more detailed error types
-   - Implement retry mechanisms for failed steps
-   - Add error recovery strategies
+OpenPanda
+- GitHub: [@openpandacodes](https://github.com/openpandacodes)
 
-2. **Resource Management**
-   - Implement resource caching
-   - Add resource validation rules
-   - Support resource versioning
+## 🙏 Acknowledgments
 
-3. **Workflow Optimization**
-   - Add parallel step execution
-   - Implement step prioritization
-   - Add workflow optimization algorithms
-
-4. **Security Enhancements**
-   - Add authentication for API calls
-   - Implement rate limiting
-   - Add input validation
-
-5. **Documentation**
-   - Add API documentation
-   - Create usage examples
-   - Add architecture diagrams
-
-6. **Testing**
-   - Add more test cases
-   - Implement integration tests
-   - Add performance benchmarks
-
-7. **Monitoring**
-   - Add logging system
-   - Implement metrics collection
-   - Add performance monitoring
-
-8. **Extensibility**
-   - Create plugin system
-   - Add custom step types
-   - Support custom resource types
-
-9. **User Experience**
-   - Add interactive CLI
-   - Create web interface
-   - Add progress tracking
-
-10. **Performance**
-    - Optimize workflow generation
-    - Add caching layer
-    - Implement batch processing
+- Thanks to all contributors who have helped shape this project
+- Special thanks to the TypeScript and Node.js communities
