@@ -21,5 +21,5 @@ export interface DeepFlow {
   };
 }
 
-export { Goal } from './Goal';
-export { DeepIntent } from './DeepIntent';
+export type { Goal } from './Goal';
+export type { DeepIntent } from './DeepIntent';

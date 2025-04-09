@@ -45,4 +45,20 @@ coverage/
 *.tgz
 
 # Yarn Integrity file
-.yarn-integrity 
+.yarn-integrity
+
+# New additions from the code block
+/node_modules
+/.pnp
+.pnp.js
+
+# New additions from the code block
+/coverage
+
+# New additions from the code block
+/build
+
+# New additions from the code block
+.env.development.local
+.env.test.local
+.env.production.local 
