@@ -61,4 +61,10 @@ coverage/
 # New additions from the code block
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+
+# New additions from the code block
+.env.development
+.env.test
+.env.production
+public/env.js 
