@@ -3,6 +3,19 @@
 import { ChatClientBase } from '../ChatClientBase';
 import { ChatMessage, ChatResponse, ChatClientConfig } from '../../types/ChatClient';
 import { DeepIntent } from '../../types/DeepIntent';
+import { Intent } from '../../types/intent';
+import '../../types/env';
+
+declare global {
+  interface Window {
+    env: {
+      REACT_APP_CLAUDE_API_KEY?: string;
+      REACT_APP_CLAUDE_MODEL?: string;
+      REACT_APP_CLAUDE_TEMPERATURE?: string;
+      REACT_APP_CLAUDE_MAX_TOKENS?: string;
+    };
+  }
+}
 
 export class ClaudeClient extends ChatClientBase {
   private systemPrompt = `You are an intent extraction assistant. Your task is to analyze user messages and extract their intent in a structured format.
@@ -22,8 +35,15 @@ export class ClaudeClient extends ChatClientBase {
     "constraints": ["list of constraints"]
   }`;
 
-  constructor(config: ChatClientConfig) {
-    super('claude', '1.0', config);
+  constructor(config?: Partial<ChatClientConfig>) {
+    const defaultConfig: ChatClientConfig = {
+      apiKey: window.env?.REACT_APP_CLAUDE_API_KEY || '',
+      model: window.env?.REACT_APP_CLAUDE_MODEL || 'claude-3-opus',
+      temperature: parseFloat(window.env?.REACT_APP_CLAUDE_TEMPERATURE || '0.7'),
+      maxTokens: parseInt(window.env?.REACT_APP_CLAUDE_MAX_TOKENS || '4096', 10)
+    };
+
+    super('claude', '1.0', { ...defaultConfig, ...config });
   }
 
   async initialize(): Promise<void> {
@@ -39,7 +59,7 @@ export class ClaudeClient extends ChatClientBase {
 
   protected async extractIntent(response: ChatResponse): Promise<DeepIntent> {
     try {
-      const intentData = JSON.parse(response.intent);
+      const intentData = JSON.parse(response.content);
       
       // Store the full response and metadata in the raw field
       const rawData = {
@@ -70,6 +90,39 @@ export class ClaudeClient extends ChatClientBase {
     }
   }
 
+  async processIntent(userInput: string): Promise<Intent> {
+    const message: ChatMessage = {
+      role: 'user',
+      content: userInput
+    };
+
+    const response = await this.sendMessage(message);
+    const deepIntent = await this.extractIntent(response);
+
+    return {
+      id: deepIntent.id,
+      action: deepIntent.mainGoal.objective,
+      description: deepIntent.subGoals.map(goal => goal.objective).join(', '),
+      parameters: JSON.parse(deepIntent.raw)
+    };
+  }
+
+  async executeIntent(intent: Intent): Promise<any> {
+    const message: ChatMessage = {
+      role: 'user',
+      content: `Execute the following intent:
+Action: ${intent.action}
+Description: ${intent.description}
+Parameters: ${JSON.stringify(intent.parameters, null, 2)}`
+    };
+
+    const response = await this.sendMessage(message);
+    return {
+      status: 'completed',
+      result: response.content
+    };
+  }
+
   private async callClaudeAPI(message: ChatMessage): Promise<any> {
     // Implement actual Claude API call
     // This is a placeholder implementation
@@ -88,9 +141,8 @@ export class ClaudeClient extends ChatClientBase {
 
   private parseClaudeResponse(response: any): ChatResponse {
     return {
+      content: response.content.text,
       rawResponse: response,
-      intent: response.content.text,
-      confidence: 0.95,
       metadata: {
         model: this.config.model,
         timestamp: new Date().toISOString()

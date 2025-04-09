@@ -15,6 +15,9 @@ export interface ChatClient {
    * Configuration for the chat client
    */
   config: ChatClientConfig;
+
+  initialize(): Promise<void>;
+  sendMessage(message: ChatMessage): Promise<ChatResponse>;
 }
 
 export interface ChatClientConfig {
@@ -46,36 +49,26 @@ export interface ChatClientConfig {
 
 export interface ChatMessage {
   /**
-   * Role of the message sender (user or assistant)
+   * Role of the message sender (user, assistant, or system)
    */
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
 
   /**
    * Content of the message
    */
   content: string;
-
-  /**
-   * Optional metadata about the message
-   */
-  metadata?: Record<string, any>;
 }
 
 export interface ChatResponse {
   /**
+   * The content of the response
+   */
+  content: string;
+
+  /**
    * The raw response from the chat client
    */
   rawResponse: any;
-
-  /**
-   * The extracted intent from the response
-   */
-  intent: string;
-
-  /**
-   * Confidence score of the intent extraction
-   */
-  confidence: number;
 
   /**
    * Any additional metadata from the response
